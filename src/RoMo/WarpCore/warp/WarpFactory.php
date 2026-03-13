@@ -8,10 +8,6 @@ use pocketmine\event\EventPriority;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerLoginEvent;
 use pocketmine\math\Vector3;
-use pocketmine\network\mcpe\protocol\CameraInstructionPacket;
-use pocketmine\network\mcpe\protocol\types\camera\CameraFadeInstruction;
-use pocketmine\network\mcpe\protocol\types\camera\CameraFadeInstructionColor;
-use pocketmine\network\mcpe\protocol\types\camera\CameraFadeInstructionTime;
 use pocketmine\Server;
 use pocketmine\utils\SingletonTrait;
 use poggit\libasynql\DataConnector;
@@ -38,37 +34,11 @@ class WarpFactory{
     /** @var Closure[] */
     private array $warpEffectQueue = [];
 
-    /** @var CameraInstructionPacket */
-    private CameraInstructionPacket $cameraInstructionPacket;
-    private CameraInstructionPacket $cameraInstructionPacketInternal;
-
     public static function init() : void{
         self::$instance = new self();
     }
 
     private function __construct(){
-        $this->cameraInstructionPacket = CameraInstructionPacket::create(
-            null,
-            false,
-            new CameraFadeInstruction(
-                new CameraFadeInstructionTime(0.5, 1.75, 0.5),
-                new CameraFadeInstructionColor(0, 0, 0)
-            ),
-            null,
-            null
-        );
-        $this->cameraInstructionPacketInternal = CameraInstructionPacket::create(
-            null,
-            false,
-            new CameraFadeInstruction(
-                new CameraFadeInstructionTime(0.5, 0, 0.5),
-                new CameraFadeInstructionColor(0, 0, 0)
-            ),
-            null,
-            null
-        );
-
-
         $this->database = WarpCore::getInstance()->getDatabase();
 
         //LOAD ALL WARPS
@@ -119,9 +89,7 @@ class WarpFactory{
                 (boolean) $row["is_particle"],
                 (boolean) $row["is_sound"],
                 (boolean) $row["is_permit"],
-                (boolean) $row["is_command_register"],
-                $this->cameraInstructionPacket,
-                $this->cameraInstructionPacketInternal
+                (boolean) $row["is_command_register"]
             );
         } catch(Throwable $e){
             return null;
@@ -266,17 +234,4 @@ class WarpFactory{
         }
     }
 
-    /**
-     * @return CameraInstructionPacket
-     */
-    public function getCameraInstructionPacket() : CameraInstructionPacket{
-        return $this->cameraInstructionPacket;
-    }
-
-    /**
-     * @return CameraInstructionPacket
-     */
-    public function getCameraInstructionPacketInternal() : CameraInstructionPacket{
-        return $this->cameraInstructionPacketInternal;
-    }
 }
