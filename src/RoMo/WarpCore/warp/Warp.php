@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace RoMo\WarpCore\warp;
 
+use kim\present\cameraapi\Camera;
 use pocketmine\entity\Location;
 use pocketmine\math\Vector3;
 use pocketmine\network\mcpe\protocol\AnimateEntityPacket;
-use pocketmine\network\mcpe\protocol\CameraInstructionPacket;
 use pocketmine\player\Player;
 use pocketmine\scheduler\ClosureTask;
 use pocketmine\scheduler\TaskScheduler;
@@ -49,11 +49,9 @@ class Warp{
 
     private WarpCore $warpCore;
     private TaskScheduler $scheduler;
-    private CameraInstructionPacket $cameraInstructionPacket;
-    private CameraInstructionPacket $cameraInstructionPacketInternal;
     private Translator $translator;
 
-    public function __construct(string $name, string $serverName, string $worldName, Vector3 $position, float $yaw, float $pitch, bool $isTitle, bool $isParticle, bool $isSound, bool $isPermit, bool $isCommandRegister, CameraInstructionPacket $packet, CameraInstructionPacket $packetInternal){
+    public function __construct(string $name, string $serverName, string $worldName, Vector3 $position, float $yaw, float $pitch, bool $isTitle, bool $isParticle, bool $isSound, bool $isPermit, bool $isCommandRegister){
         $this->name = $name;
         $this->serverName = $serverName;
         $this->worldName = $worldName;
@@ -72,8 +70,6 @@ class Warp{
 
         $this->warpCore = WarpCore::getInstance();
         $this->scheduler = WarpCore::getInstance()->getScheduler();
-        $this->cameraInstructionPacket = $packet;
-        $this->cameraInstructionPacketInternal = $packetInternal;
         $this->translator = WarpCore::getTranslator();
     }
 
@@ -252,9 +248,9 @@ class Warp{
                 }
             }
             if($this->serverName === $this->warpCore->getServerName()){
-                $player->getNetworkSession()->sendDataPacket($this->cameraInstructionPacketInternal);
+                $this->sendWarpFade($player, false);
             }else{
-                $player->getNetworkSession()->sendDataPacket($this->cameraInstructionPacket);
+                $this->sendWarpFade($player, true);
             }
             $entity = new WarpEffectEntity($player->getLocation());
             $entity->spawnToAll();
@@ -335,5 +331,15 @@ class Warp{
                 $world->addSound($position, new EndermanTeleportSound(), $targetSound);
             }*/;
         };
+    }
+
+    private function sendWarpFade(Player $player, bool $isCrossServer) : void{
+        $fade = Camera::of($player)->fade()->in(0.5)->out(0.5);
+        if($isCrossServer){
+            $fade->stay(1.75);
+        }else{
+            $fade->stay(0.0);
+        }
+        $fade->send();
     }
 }
